@@ -1,0 +1,8 @@
+filters:
+    - mw: 10 - 150
+    - logP: 0 - 1
+    - hbd:  0 - 5
+    - hba: 0 - 5
+    - psa: 0 - 100
+    - rotb: 0 - 10
+    - arom: 0 - 1
