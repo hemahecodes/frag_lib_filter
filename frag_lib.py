@@ -50,6 +50,7 @@ class Library:
                     f[key] = [v.strip() for v in value.split("-")]
                 except:
                     f[key] = value
+            #print(f)
         filters = dict(ChainMap(*filters))
         #print(filters)
         for value in filters.values():
@@ -66,8 +67,9 @@ class Library:
         dummy = Fragment(**self.parsed_filters)
         #print('dummy: ',dummy.mw)
         i=0
+        #print(self.fragments_dum)  
         for frag in self.fragments_dum:
-            #print(dummy.hbd,dummy.mw,dummy.logP)
+            
             #print(frag.mw, frag.logP, frag.hbd,frag.hba,frag.psa,frag.rotb,frag.arom)
             if float(dummy.mw[0])< frag.mw < float(dummy.mw[1]):
                 if float(dummy.logP[0]) < frag.logP < float(dummy.logP[1]):
@@ -75,7 +77,7 @@ class Library:
                         if int(dummy.hba[0]) < frag.hba < int(dummy.hba[1]):
                             if int(dummy.psa[0]) < frag.psa < int(dummy.psa[1]):
                                 if int(dummy.rotb[0]) <=  frag.rotb <=  int(dummy.rotb[1]):
-                                    if int(dummy.arom[0]) <=  frag.arom <= int(dummy.arom[1]):
+                                    if bool(dummy.arom[0]) ==  frag.arom:
                                         filtered.append(self.fragments[i])
             i+=1
         
