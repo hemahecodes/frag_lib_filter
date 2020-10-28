@@ -5,6 +5,7 @@ from rdkit import Chem
 from rdkit.Chem import QED
 from yaml import load, Loader
 from collections import ChainMap
+import time
 
 class Library:
 
@@ -14,7 +15,7 @@ class Library:
         self.sd_files = self._retrieve_files() # not passing self.path since we access it within method
         # deleted self.fragments since we can omit it
         self.fragments_dum = [Fragment(f) for f in self._read_mols()] 
-        
+        self.mols = self._read_mols()        
 
     def filters_f(self): # transformed condition into method
         self.parsed_filters = self._load_filters()
@@ -37,7 +38,7 @@ class Library:
         for file in self.sd_files:
             mols = Chem.SDMolSupplier(file, removeHs=False)
             output = [mol for mol in mols if mol] # loop into a single-line loop
-        return output
+            return output
 
     def _load_filters(self):
         
@@ -58,18 +59,18 @@ class Library:
 
     def _apply_filters(self):
        
-        filtered = []
-                
+        filtered = []        
         i=0  
         for frag in self.fragments_dum:
+            
             if float(self.parsed_filters['mw'][0])< frag.mw < float(self.parsed_filters['mw'][1]):
                 if float(self.parsed_filters['logP'][0]) < frag.logP < float(self.parsed_filters['logP'][1]):
                     if int(self.parsed_filters['hbd'][0]) < frag.hbd < int(self.parsed_filters['hbd'][1]):
                         if int(self.parsed_filters['hba'][0]) < frag.hba < int(self.parsed_filters['hba'][1]):
                             if int(self.parsed_filters['psa'][0]) < frag.psa < int(self.parsed_filters['psa'][1]):
-                                if int(self_parsed.filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
+                                if int(self.parsed_filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
                                     if bool(self.parsed_filters['arom'][0]) ==  frag.arom:
-                                        filtered.append(self._read_mols[i])
+                                        filtered.append(self.mols[i])
             i+=1
         
              
@@ -114,5 +115,7 @@ def main():
     
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("--- %s ---" % (time.time() - start_time))
 
