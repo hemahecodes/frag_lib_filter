@@ -5,4 +5,4 @@ filters:
     - hba: 0 - 5
     - psa: 0 - 100
     - rotb: 0 - 10
-    - arom: 0 - 1
+    - arom: 'True'

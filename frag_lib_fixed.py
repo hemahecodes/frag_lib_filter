@@ -5,7 +5,6 @@ from rdkit import Chem
 from rdkit.Chem import QED
 from yaml import load, Loader
 from collections import ChainMap
-import time
 
 class Library:
 
@@ -62,10 +61,9 @@ class Library:
         filtered = []        
         i=0  
         for frag in self.fragments_dum:
-            
             if float(self.parsed_filters['mw'][0])< frag.mw < float(self.parsed_filters['mw'][1]):
                 if float(self.parsed_filters['logP'][0]) < frag.logP < float(self.parsed_filters['logP'][1]):
-                    if int(self.parsed_filters['hbd'][0]) < frag.hbd < int(self.parsed_filters['hbd'][1]):
+                    if int(self.parsed_filters['hbd'][0]) < frag.hbd < int(self.parsed_filters['hbd'][1]): 
                         if int(self.parsed_filters['hba'][0]) < frag.hba < int(self.parsed_filters['hba'][1]):
                             if int(self.parsed_filters['psa'][0]) < frag.psa < int(self.parsed_filters['psa'][1]):
                                 if int(self.parsed_filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
@@ -115,7 +113,5 @@ def main():
     
 
 if __name__ == "__main__":
-    start_time = time.time()
     main()
-    print("--- %s ---" % (time.time() - start_time))
 
