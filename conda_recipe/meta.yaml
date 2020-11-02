@@ -1,0 +1,28 @@
+package:
+  name: frag-lib-filter
+  version: 0.0.0
+
+about:
+  home: https://github.com/hemahecodes/fragment_library
+  license: Apache
+  license_file: LICENSE
+  summary: Filter fragment libraries
+
+source:
+  path: ../
+  
+  
+requirements:
+  host:
+    - python
+    - setuptools
+
+  run:
+    # Base dependencies
+    - python
+    - numpy
+    - pyyaml
+    - rdkit
+test:
+  command:
+    - python frag-lib-filter -h 
