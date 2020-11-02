@@ -1,7 +1,7 @@
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+from . import rdkit
+from . import argparse
+from . import glob
+from . import os
+from . import yaml
+from . import collections
 
-__author__ = "Helena Martín Hernández"
-
-__email__ = "helena.martin@nostrumbiodiscovery.com"

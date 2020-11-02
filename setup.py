@@ -1,3 +1,4 @@
+
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -5,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="frag-lib-filter",
-    version="0.0.0",
+    version="0.0.1",
     author="Helena Martin",
     author_email="helena.martin@nostrumbiodiscovery.com",
     description="Fragment library package",
