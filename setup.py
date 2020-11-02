@@ -6,17 +6,17 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="frag-lib-filter",
-    version="0.0.1",
+    version="0.0.3",
     author="Helena Martin",
     author_email="helena.martin@nostrumbiodiscovery.com",
     description="Fragment library package",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/hemahecodes/fragment_library",
+    url="https://github.com/hemahecodes/frag-lib-filter",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache License 2.0",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
