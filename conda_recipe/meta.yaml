@@ -1,9 +1,9 @@
 package:
-  name: frag-lib-filter
+  name: frag_lib_filter
   version: 0.0.0
 
 about:
-  home: https://github.com/hemahecodes/fragment_library
+  home: https://github.com/hemahecodes/frag_lib_filter
   license: Apache
   license_file: LICENSE
   summary: Filter fragment libraries
