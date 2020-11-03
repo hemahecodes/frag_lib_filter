@@ -5,8 +5,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="frag-lib-filter",
-    version="0.0.5",
+    name="frag_lib_filter",
+    version="0.0.0",
     author="Helena Martin",
     author_email="helena.martin@nostrumbiodiscovery.com",
     description="Fragment library package",
