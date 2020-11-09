@@ -5,26 +5,37 @@ from rdkit import Chem
 from rdkit.Chem import QED
 from yaml import load, Loader
 from collections import ChainMap
+import time
 
 class Library:
 
     def __init__(self, path, filters=None, save=False): 
         self.path = path # not using absolute path since we defined path on parse_args()
-        self.filters = filters 
+        self.filters = filters
+        self.errors=0 
         self.sd_files = self._retrieve_files() # not passing self.path since we access it within method
+        self.main()
+
+    def main(self):
         # deleted self.fragments since we can omit it
-        self.fragments_dum = [Fragment(f) for f in self._read_mols()] 
-        self.mols = self._read_mols()        
+        for sd_file in self.sd_files:
+            mols= Chem.SDMolSupplier(sd_file,removeHs=False)
+            for mol in mols:
+                self.molecule = mol
+                self.fragments_dum = [Fragment(mol)]
+                self.filters_f()
+                self.save() 
 
     def filters_f(self): # transformed condition into method
         self.parsed_filters = self._load_filters()
         self.filtered_fragments = self._apply_filters()
 
-    def save(self, output='filtered_molecules.sdf'): # transformed condition into method
-        writer = Chem.SDWriter(output)
-        for mol in self.filtered_fragments:
-            writer.write(mol)
-        return output
+    def save(self): # transformed condition into method
+       output= open('filtered_molecules.sdf','a')
+       writer = Chem.SDWriter(output)
+       for mol in self.filtered_fragments:
+           writer.write(mol)
+       
    
 
     def _retrieve_files(self): # deleted argument path since we can access it within method
@@ -32,44 +43,36 @@ class Library:
         sd_files = glob.glob(sdf_path)
         return sd_files
 
-    
-    def _read_mols(self): # deleted argument files since we can access it within method
-        for file in self.sd_files:
-            mols = Chem.SDMolSupplier(file, removeHs=False)
-            output = [mol for mol in mols if mol] # loop into a single-line loop
-            return output
-
     def _load_filters(self):
         
         with open(self.filters, "r") as f:
             yaml = load(f, Loader=Loader)                                                                                                                                               
             filters = yaml["filters"]
-
+       
         for f in filters:
             """make a comment explaining this"""
             for key, value in f.items():
                 try:
-                    f[key] = [v.strip() for v in value.split("-")]
+                    f[key] = [v.strip() for v in value.split("--")]
                 except:
                     f[key] = value
         filters = dict(ChainMap(*filters))
-     
         return filters
 
     def _apply_filters(self):
-       
-        filtered = []        
-        i=0  
+        filtered = []          
         for frag in self.fragments_dum:
-            if float(self.parsed_filters['mw'][0])< frag.mw < float(self.parsed_filters['mw'][1]):
-                if float(self.parsed_filters['logP'][0]) < frag.logP < float(self.parsed_filters['logP'][1]):
-                    if int(self.parsed_filters['hbd'][0]) < frag.hbd < int(self.parsed_filters['hbd'][1]): 
-                        if int(self.parsed_filters['hba'][0]) < frag.hba < int(self.parsed_filters['hba'][1]):
-                            if int(self.parsed_filters['psa'][0]) < frag.psa < int(self.parsed_filters['psa'][1]):
-                                if int(self.parsed_filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
-                                    if bool(self.parsed_filters['arom'][0]) ==  frag.arom:
-                                        filtered.append(self.mols[i])
-            i+=1
+            try:
+                if float(self.parsed_filters['mw'][0])< frag.mw < float(self.parsed_filters['mw'][1]):
+                    if float(self.parsed_filters['logP'][0]) < frag.logP < float(self.parsed_filters['logP'][1]):
+                        if int(self.parsed_filters['hbd'][0]) < frag.hbd < int(self.parsed_filters['hbd'][1]):
+                            if int(self.parsed_filters['hba'][0]) < frag.hba < int(self.parsed_filters['hba'][1]):
+                                if int(self.parsed_filters['psa'][0]) < frag.psa < int(self.parsed_filters['psa'][1]):
+                                    if int(self.parsed_filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
+                                        if bool(self.parsed_filters['arom'][0]) ==  frag.arom:
+                                            filtered.append(self.molecule)
+            except:               
+               self.errors+=1
         
              
         return filtered 
@@ -97,21 +100,18 @@ class Fragment():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=str, required=True, help="Directory with fragment SD files.")
-    parser.add_argument("--save", type=str, required=False, help="SD file name, if you want to save the filtered output.")
     parser.add_argument("--filters", type=str, required=False, help="YML file with filters")
     args = parser.parse_args()
     
-    return os.path.abspath(args.dir), args.save, args.filters
+    return os.path.abspath(args.dir), args.filters
 
 def main():
-    path, save, filters = parse_args()
-    lib = Library(path, filters, save)
-    if filters:
-        lib.filters_f() 
-    if save:
-        lib.save() 
-    
+    path, filters = parse_args()
+    lib = Library(path, filters)
+    errors = lib.errors
+    print("Number of wrong molecules: %s" % (lib.errors))
 
 if __name__ == "__main__":
+    start_time=time.time()
     main()
-
+    print(" --- %s seconds ---" % (time.time()-start_time))
