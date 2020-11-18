@@ -1,41 +1,86 @@
 import argparse
 import glob
 import os
+import yaml
 from rdkit import Chem
 from rdkit.Chem import QED
+from tqdm import tqdm
 from yaml import load, Loader
 from collections import ChainMap
 import time
-
+from multiprocessing import Pool
+from functools import partial
 class Library:
 
-    def __init__(self, path, filters=None, save=False): 
+    def __init__(self, path, filters=None,n_workers=100, save=False): 
         self.path = path # not using absolute path since we defined path on parse_args()
         self.filters = filters
+        self.n_workers=n_workers
         self.errors=0 
+        #self.filt_yaml= open(,'r')
         self.sd_files = self._retrieve_files() # not passing self.path since we access it within method
-        self.main()
+        #print(self.sd_files)
+        tqdm(self.parallelize(self.main,self.sd_files,self.n_workers))
 
-    def main(self):
+    def parallelize(self,func,iterable,n_workers, **kwargs):
+        f=partial(func,**kwargs)
+        if  n_workers> 1:
+            #pool = Pool(n_workers)
+            with Pool(n_workers) as pool:
+                r= list(tqdm(pool.imap(func,iterable)))
+                pool.close()
+                pool.join()
+            return 0
+               
+        else:
+            return list(map(f,iterable))
+    def split_in_chunks(self,n_chunks):
+        output_folder=f"split_sdfs_{n_chunks_}"
+        output_files=[]
+        for sdf_file in self.sdf_files:
+            print("Processing file", sdf_file)
+            name, ext = os.path.splitext(sdf_file)
+            name = name.replace("/","_")
+            mols = 0
+            splits = 1
+            if not os.path.exists(output_folder):
+                os.mkdir(output_folder)
+            fw = open(os.path.join(output_folder,name+f"_{splits}"+ext),"w")
+            output_files.append(os.path.join(output_folder,name+f"_{splits}"+ext))
+            with open(sdf_file) as f:
+                for line in f:
+                    fw.write(line)
+                    if line.startswith("$$$$"):
+                        mols+=1
+                    if mols == n_chunks:
+                        mols=0
+                        fw.close()
+                        splits+=1
+                        fw.open(os.path.join(output_folder, name+f"_{splits}"+ext),"w")
+                        output_files.append(os.path.join(output_folder, name+f"_{splits}"+ext))
+            return output_files
+             
+    def main(self, file_sdf):
         # deleted self.fragments since we can omit it
-        for sd_file in self.sd_files:
-            mols= Chem.SDMolSupplier(sd_file,removeHs=False)
-            for mol in mols:
-                self.molecule = mol
-                self.fragments_dum = [Fragment(mol)]
-                self.filters_f()
-                self.save() 
+        mols= Chem.SDMolSupplier(file_sdf,removeHs=False)
+        name = os.path.basename(file_sdf).rsplit(".")[0]
+        final_name="%s_filtered.sdf" % name
+        for mol in mols:
+            self.molecule = mol
+            self.fragments_dum = [Fragment(mol)]
+            self.filters_f()
+            self.save(output=final_name) 
 
     def filters_f(self): # transformed condition into method
         self.parsed_filters = self._load_filters()
         self.filtered_fragments = self._apply_filters()
 
-    def save(self): # transformed condition into method
-       output= open('filtered_molecules.sdf','a')
+    def save(self, output='filtered_molecules.sdf'): # transformed condition into method
+       output= open(output,'w')
        writer = Chem.SDWriter(output)
        for mol in self.filtered_fragments:
            writer.write(mol)
-       
+        
    
 
     def _retrieve_files(self): # deleted argument path since we can access it within method
@@ -44,18 +89,15 @@ class Library:
         return sd_files
 
     def _load_filters(self):
-        
-        with open(self.filters, "r") as f:
-            yaml = load(f, Loader=Loader)                                                                                                                                               
-            filters = yaml["filters"]
-       
-        for f in filters:
-            """make a comment explaining this"""
-            for key, value in f.items():
+        with open(self.filters, 'r') as filters_file: 
+            yaml = load(filters_file, Loader=Loader)
+            filters=yaml["filters"]
+        for k in filters:
+            for key, value in k.items():
                 try:
-                    f[key] = [v.strip() for v in value.split("--")]
+                    k[key] = [v.strip() for v in value.split("--")]
                 except:
-                    f[key] = value
+                    k[key] = value
         filters = dict(ChainMap(*filters))
         return filters
 
@@ -71,6 +113,7 @@ class Library:
                                     if int(self.parsed_filters['rotb'][0]) <=  frag.rotb <=  int(self.parsed_filters['rotb'][1]):
                                         if bool(self.parsed_filters['arom'][0]) ==  frag.arom:
                                             filtered.append(self.molecule)
+                                            self.errors+=1
             except:               
                self.errors+=1
         
@@ -101,15 +144,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=str, required=True, help="Directory with fragment SD files.")
     parser.add_argument("--filters", type=str, required=False, help="YML file with filters")
+    parser.add_argument("--n_workers", type = int, required = False, help = "Number of CPUs")
     args = parser.parse_args()
     
-    return os.path.abspath(args.dir), args.filters
+    return os.path.abspath(args.dir), args.filters, args.n_workers
 
 def main():
-    path, filters = parse_args()
-    lib = Library(path, filters)
+    path, filters, n_workers= parse_args()
+    lib = Library(path, filters,n_workers)
     errors = lib.errors
     print("Number of wrong molecules: %s" % (lib.errors))
+
 
 if __name__ == "__main__":
     start_time=time.time()
