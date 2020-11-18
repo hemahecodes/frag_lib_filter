@@ -34,32 +34,7 @@ class Library:
                
         else:
             return list(map(f,iterable))
-    def split_in_chunks(self,n_chunks):
-        output_folder=f"split_sdfs_{n_chunks_}"
-        output_files=[]
-        for sdf_file in self.sdf_files:
-            print("Processing file", sdf_file)
-            name, ext = os.path.splitext(sdf_file)
-            name = name.replace("/","_")
-            mols = 0
-            splits = 1
-            if not os.path.exists(output_folder):
-                os.mkdir(output_folder)
-            fw = open(os.path.join(output_folder,name+f"_{splits}"+ext),"w")
-            output_files.append(os.path.join(output_folder,name+f"_{splits}"+ext))
-            with open(sdf_file) as f:
-                for line in f:
-                    fw.write(line)
-                    if line.startswith("$$$$"):
-                        mols+=1
-                    if mols == n_chunks:
-                        mols=0
-                        fw.close()
-                        splits+=1
-                        fw.open(os.path.join(output_folder, name+f"_{splits}"+ext),"w")
-                        output_files.append(os.path.join(output_folder, name+f"_{splits}"+ext))
-            return output_files
-             
+               
     def main(self, file_sdf):
         # deleted self.fragments since we can omit it
         mols= Chem.SDMolSupplier(file_sdf,removeHs=False)
