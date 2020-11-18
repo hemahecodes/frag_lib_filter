@@ -19,7 +19,7 @@ class Library:
         self.errors=0 
         #self.filt_yaml= open(,'r')
         self.sd_files = self._retrieve_files() # not passing self.path since we access it within method
-        #print(self.sd_files)
+        self.sd_files = self.split_in_chunks(self.sd_files,5000)
         tqdm(self.parallelize(self.main,self.sd_files,self.n_workers))
 
     def parallelize(self,func,iterable,n_workers, **kwargs):
@@ -34,6 +34,35 @@ class Library:
                
         else:
             return list(map(f,iterable))
+
+    def split_in_chunks(self,sdf_files,n_chunks=25000):
+
+        output_folder=f"split_sdfs_{n_chunks}"
+        output_files=[]
+        for sdf_file in sdf_files:
+            print("Processing file", sdf_file)
+            name, ext = os.path.splitext(sdf_file)
+            name = name.replace("/","_")
+            mols = 0
+            splits = 1
+            if not os.path.exists(output_folder):
+                os.mkdir(output_folder)
+
+            fw = open(os.path.join(output_folder,name+f"_{splits}"+ext),'w')
+            output_files.append(os.path.join(output_folder,name+f"_{splits}"+ext))
+            with open(sdf_file) as f:
+                for line in f:
+                    fw.write(line)
+                    if line.startswith("$$$$"):
+                        mols+=1
+                    if mols == n_chunks:
+                        mols=0
+                        fw.close()
+                        splits+=1
+                        #print(os.path.join(output_folder, name+f"_{splits}"+ext))
+                        fw=open(os.path.join(output_folder, name+f"_{splits}"+ext),'w')
+                        output_files.append(os.path.join(output_folder, name+f"_{splits}"+ext))
+        return output_files
                
     def main(self, file_sdf):
         # deleted self.fragments since we can omit it
