@@ -1,8 +1,19 @@
 filters:
-    - mw: 10 -- 200
-    - logP: -4 -- 4
-    - hbd:  0 -- 8
-    - hba: 0 -- 5
-    - psa: 0 -- 100
-    - rotb: 0 -- 10
-    - arom: 'True'
+    mw:
+      min: 10
+      max: 150
+    logP:
+      min: 0
+      max: 0.5
+    hbd:
+      min: 0 
+      max: 8
+    hba: 
+      min: 0 
+      max: 5
+    psa:
+      min: 0
+      max: 100
+    rotb: 
+      min: 0
+      max: 10

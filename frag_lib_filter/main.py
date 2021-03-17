@@ -17,37 +17,38 @@ class Library:
         self.filters = filters
         self.n_workers=n_workers
         self.errors=0 
-        #self.filt_yaml= open(,'r')
         self.sd_files = self._retrieve_files() # not passing self.path since we access it within method
-        self.sd_files = self.split_in_chunks(self.sd_files,5000)
-        tqdm(self.parallelize(self.main,self.sd_files,self.n_workers))
-
+        #self.splitted=[]
+        #self.sd_files= self.split_in_chunks(self.sd_files)
+        #tqdm(self.parallelize(self.main,self.sd_files,self.n_workers))
+        self.main(self.sd_files)
     def parallelize(self,func,iterable,n_workers, **kwargs):
         f=partial(func,**kwargs)
         if  n_workers> 1:
-            #pool = Pool(n_workers)
             with Pool(n_workers) as pool:
-                r= list(tqdm(pool.imap(func,iterable)))
+                r = list(tqdm(pool.map(func,iterable)))
                 pool.close()
                 pool.join()
             return 0
-               
         else:
             return list(map(f,iterable))
 
     def split_in_chunks(self,sdf_files,n_chunks=25000):
-
         output_folder=f"split_sdfs_{n_chunks}"
         output_files=[]
         for sdf_file in sdf_files:
+            #self.start_time2=time.time()
             print("Processing file", sdf_file)
+            #print(" --- %s seconds ---" % (time.time()-start_time))
             name, ext = os.path.splitext(sdf_file)
             name = name.replace("/","_")
             mols = 0
             splits = 1
-            if not os.path.exists(output_folder):
-                os.mkdir(output_folder)
-
+            try:
+                if not os.path.exists(output_folder):
+                    os.mkdir(output_folder)
+            except:
+                pass
             fw = open(os.path.join(output_folder,name+f"_{splits}"+ext),'w')
             output_files.append(os.path.join(output_folder,name+f"_{splits}"+ext))
             with open(sdf_file) as f:
@@ -59,28 +60,32 @@ class Library:
                         mols=0
                         fw.close()
                         splits+=1
-                        #print(os.path.join(output_folder, name+f"_{splits}"+ext))
                         fw=open(os.path.join(output_folder, name+f"_{splits}"+ext),'w')
                         output_files.append(os.path.join(output_folder, name+f"_{splits}"+ext))
         return output_files
                
-    def main(self, file_sdf):
-        # deleted self.fragments since we can omit it
-        mols= Chem.SDMolSupplier(file_sdf,removeHs=False)
-        name = os.path.basename(file_sdf).rsplit(".")[0]
-        final_name="%s_filtered.sdf" % name
-        for mol in mols:
-            self.molecule = mol
-            self.fragments_dum = [Fragment(mol)]
-            self.filters_f()
-            self.save(output=final_name) 
+    def main(self, files_sdf):
+        for file_sdf in files_sdf:
+            # deleted self.fragments since we can omit it
+            mols= Chem.SDMolSupplier(file_sdf,removeHs=False)
+            name = os.path.basename(file_sdf).rsplit(".")[0]
+            final_name="%s_filtered.sdf" % name
+            for mol in mols:
+                self.molecule = mol
+                self.fragments_dum = [Fragment(mol)]
+                self.filters_f()
+                #print('Saving molecule:', file_sdf)
+                #print(" --- %s seconds ---" % (time.time()-self.start_time2))
+            
+                self.save(output='frag_lib_filtered.sdf') 
 
     def filters_f(self): # transformed condition into method
         self.parsed_filters = self._load_filters()
+        print('parsed filters:', self.parsed_filters)
         self.filtered_fragments = self._apply_filters()
 
     def save(self, output='filtered_molecules.sdf'): # transformed condition into method
-       output= open(output,'w')
+       output= open(output,'a')
        writer = Chem.SDWriter(output)
        for mol in self.filtered_fragments:
            writer.write(mol)
@@ -96,14 +101,18 @@ class Library:
         with open(self.filters, 'r') as filters_file: 
             yaml = load(filters_file, Loader=Loader)
             filters=yaml["filters"]
+        filters_dict={}
         for k in filters:
-            for key, value in k.items():
+            print(k)
+            for key, value in filters[k].items():
                 try:
-                    k[key] = [v.strip() for v in value.split("--")]
+                    filters_dict[k].append(value)
                 except:
-                    k[key] = value
-        filters = dict(ChainMap(*filters))
-        return filters
+                    filters_dict[k] = []
+                    filters_dict[k].append(value)       
+        #filters = dict(ChainMap(*filters))
+        
+        return filters_dict
 
     def _apply_filters(self):
         filtered = []          
